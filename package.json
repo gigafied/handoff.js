@@ -1,5 +1,5 @@
 {
-  "name": "handoff.js",
+  "name": "handoff",
   "version": "1.0.0",
   "description": "PubSub with Promises",
   "main": "index.js",
