@@ -1,0 +1,26 @@
+{
+  "name": "handoff.js",
+  "version": "1.0.0",
+  "description": "Promise based PubSub for JavaScript",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests/run.js"
+  },
+  "keywords": [
+    "publish",
+    "subscribe",
+    "pubsub",
+    "loose",
+    "coupling",
+    "ioc",
+    "inversion",
+    "of",
+    "control"
+  ],
+  "author": "Taka Kojima <taka@gigafied.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "chai": "^3.4.1",
+    "mocha": "^2.3.4"
+  }
+}
