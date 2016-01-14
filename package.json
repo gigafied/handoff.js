@@ -17,6 +17,13 @@
   ],
   "author": "Taka Kojima <taka@gigafied.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/gigafied/handoff.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gigafied/handoff.js/issues"
+  },
   "devDependencies": {
     "chai": "^3.4.1",
     "mocha": "^2.3.4"
