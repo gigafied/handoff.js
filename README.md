@@ -58,3 +58,9 @@ handoff.subscribe('something', (n, message) => {
 });
 
 ````
+
+### handoff.ignoreErrors
+
+By default, handoff will throw an `Error` if you `publish()` something that nobody is subscribed to.
+This is to help alleviate some of the issues that PubSub and loose coupling introduce. You can disable this behavior by doing `handoff.ignoreErrors = true`
+

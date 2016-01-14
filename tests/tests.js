@@ -1,17 +1,18 @@
 var handoff = require('../handoff');
 
-describe('pub/sub', function () {
+describe('pub/sub', () => {
 
-    afterEach(function () {
+    afterEach(() => {
         handoff.__reset();
+        handoff.ignoreErrors = false;
     });
 
-    it('should publish/subscribe and unsubscribe to a notification successfully', function (done) {
+    it('should publish/subscribe and unsubscribe to a notification successfully', done => {
 
         var a = 0,
             subscriber1;
 
-        subscriber1 = handoff.subscribe('sub-test', function () {
+        subscriber1 = handoff.subscribe('sub-test', () => {
             a ++;
         });
 
@@ -27,7 +28,26 @@ describe('pub/sub', function () {
         done();
     });
 
-    it('should publish a notification with data', function (done) {
+    it('should throw an error if nobody is listening', done => {
+
+        try {
+            handoff.publish('sub-test');
+        }
+
+        catch (err) {
+            done();
+        }
+    });
+
+    it('should not throw an error if nobody is listening and ignoreErrors = true', done => {
+
+        handoff.ignoreErrors = true;
+        handoff.publish('sub-test');
+        handoff.ignoreErrors = false;
+        done();
+    });
+
+    it('should publish a notification with data', done => {
 
         handoff.subscribe('pub-data-test', function (n, data) {
             expect(data).to.deep.equal({
@@ -44,7 +64,7 @@ describe('pub/sub', function () {
         });
     });
 
-    it('should publish a notification with multiple arguments', function (done) {
+    it('should publish a notification with multiple arguments', done => {
 
         handoff.subscribe('pub-args-test', function (n, arg1, arg2, arg3) {
             expect(arg1).to.eql(1);
@@ -56,16 +76,16 @@ describe('pub/sub', function () {
         handoff.publish('pub-args-test', 1, 2, 'z');
     });
 
-    describe('notifications', function () {
+    describe('notifications', () => {
 
-        it('should support subscribers that return promises', function (done) {
+        it('should support subscribers that return promises', done => {
 
             var didHold = false;
 
             handoff.subscribe('hold-test-2', function (n) {
 
                 return new Promise(function (resolve, reject) {
-                    setTimeout(function () {
+                    setTimeout(() => {
                         didHold = true;
                         resolve();
                     }, 10);
@@ -81,7 +101,7 @@ describe('pub/sub', function () {
             handoff.publish('hold-test-2');
         });
 
-        it('should support subscribers that return values', function (done) {
+        it('should support subscribers that return values', done => {
 
             handoff.subscribe('respond-test-2', function (n) {
                 expect(n).to.be.an('object');
@@ -98,12 +118,12 @@ describe('pub/sub', function () {
             });
         });
 
-        it('should be able to cancel notifications', function (done) {
+        it('should be able to cancel notifications', done => {
 
             handoff.subscribe('cancel-test-2', function (n) {
                 n.cancel();
 
-                setTimeout(function () {
+                setTimeout(() => {
                     done();
                 }, 10);
             });
