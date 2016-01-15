@@ -1,8 +1,8 @@
 {
   "name": "handoff",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "PubSub with Promises",
-  "main": "index.js",
+  "main": "handoff.js",
   "scripts": {
     "test": "node tests/run.js"
   },
