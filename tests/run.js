@@ -10,6 +10,4 @@ mocha = new mocha({
 mocha.checkLeaks();
 
 mocha.addFile(__dirname + '/tests.js');
-mocha.run(function () {
-    console.log('done');
-});
+mocha.run();
