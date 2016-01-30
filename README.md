@@ -9,7 +9,7 @@ handoff.js lets you do request/response with PubSub, using Promises.
 let handoff = require('handoff');
 
 handoff.subscribe('something', (n, message) => {
-    return new Promise(() => setTimeout(() => resolve('received!'), 500));
+    return new Promise((resolve, reject) => setTimeout(() => resolve('received!'), 1000));
 });
 
 handoff.publish('something', 'hello!')
