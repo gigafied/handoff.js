@@ -2,6 +2,8 @@
 
 
 let handoff,
+    onHold = false,
+    holdQueue = [],
     interests = {},
     pending = [];
 
@@ -70,12 +72,15 @@ function notifyObjects (n) {
         return next();
     }
 
-    else if (!handoff.ignoreErrors) {
-        throw new Error(n.name + ' was published but has no subscribers.');
-    }
+    return Promise.reject(new Error(n.name + ' was published but has no subscribers.'));
 }
 
 function publishNotification (notification) {
+    if (onHold) {
+        return new Promise((resolve, reject) => {
+            holdQueue.push({resolve, reject, notification});
+        });
+    }
     pending.push(notification);
     return notifyObjects(notification);
 }
@@ -108,7 +113,7 @@ function subscribe (name, fn, priority) {
     }
 
     else {
-        interests[name].splice(priority, 0, fn);
+        interests[name].splice(priority, priority, fn);
     }
 
     return fn;
@@ -128,4 +133,23 @@ function __reset () {
     pending = [];
 }
 
-module.exports = handoff = {publish, subscribe, unsubscribe, __reset, ignoreErrors : false};
+function hold () {
+    onHold = true;
+}
+
+function resume () {
+    onHold = false;
+    holdQueue.forEach(item => {
+        item.resolve(publishNotification(item.notification));
+    });
+    holdQueue = [];
+}
+
+module.exports = handoff = {
+    publish,
+    subscribe,
+    unsubscribe,
+    hold,
+    resume,
+    __reset,
+};

@@ -4,7 +4,6 @@ describe('pub/sub', () => {
 
     afterEach(() => {
         handoff.__reset();
-        handoff.ignoreErrors = false;
     });
 
     it('should publish/subscribe and unsubscribe to a notification successfully', done => {
@@ -28,29 +27,35 @@ describe('pub/sub', () => {
         done();
     });
 
-    it('should throw an error if nobody is listening', done => {
-
-        try {
-            handoff.publish('sub-test');
-        }
-
-        catch (err) {
+    it('should reject if nobody is listening', done => {
+        handoff.publish('sub-test').catch(err => {
             done();
-        }
+        });
     });
 
-    it('should not throw an error if nobody is listening and ignoreErrors = true', done => {
+    it('should hold and resume notifications', function () {
+        var timerRan = false;
 
-        handoff.ignoreErrors = true;
-        handoff.publish('sub-test');
-        handoff.ignoreErrors = false;
-        done();
+        handoff.subscribe('sub-test', function () {
+            return 'hello!';
+        });
+
+        handoff.hold();
+        setTimeout(function () {
+            timerRan = true;
+            handoff.resume();
+        }, 0);
+
+        return handoff.publish('sub-test').then(() => {
+            expect(timerRan).to.equal(true);
+        });
     });
+
 
     it('should publish a notification with data', done => {
 
         handoff.subscribe('pub-data-test', function (n, data) {
-            expect(data).to.deep.equal({
+            expect(data).to.eql({
                 x : 1,
                 y : 2
             });
@@ -67,9 +72,9 @@ describe('pub/sub', () => {
     it('should publish a notification with multiple arguments', done => {
 
         handoff.subscribe('pub-args-test', function (n, arg1, arg2, arg3) {
-            expect(arg1).to.eql(1);
-            expect(arg2).to.eql(2);
-            expect(arg3).to.eql('z');
+            expect(arg1).to.equal(1);
+            expect(arg2).to.equal(2);
+            expect(arg3).to.equal('z');
             done();
         });
 
