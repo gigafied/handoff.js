@@ -18,16 +18,9 @@ class Notification {
     }
 
     cancel () {
-        this.name = '';
         this.status = 0;
         this.pointer = 0;
         cancelNotification(this);
-    }
-
-    dispatch (obj) {
-        this.status = 1;
-        this.pointer = 0;
-        publishNotification(this);
     }
 }
 
@@ -57,16 +50,15 @@ function notifyObjects (n) {
 
             subs = null;
 
-            if (n.status === 1) {
-                n.cancel();
-            }
-
             if (n.status === 1 || n.response != null) {
-                return Promise.resolve(n.response);
+                let response = n.response;
+                n.cancel();
+                return Promise.resolve(response);
             }
 
-            let err = new Error('Notification was cancelled.');
+            let err = new Error('Notification (' + n.name + ') was cancelled.');
             err.code = 'ECANCELED';
+            n.cancel();
 
             return Promise.reject(err);
         }
@@ -91,12 +83,16 @@ function publishNotification (notification) {
             holdQueue.push({resolve, reject, notification});
         });
     }
+    notification.status = 1;
+    notification.pointer = 0;
     pending.push(notification);
     return notifyObjects(notification);
 }
 
 function cancelNotification (notification) {
-    pending.splice(pending.indexOf(notification), 1);
+    let idx = pending.indexOf(notification);
+    if (!~idx) {return;}
+    pending.splice(idx, 1);
 }
 
 function publish () {
@@ -107,8 +103,6 @@ function publish () {
     args = args.slice(1, args.length);
 
     let notification = new Notification(name, args);
-    notification.status = 1;
-    notification.pointer = 0;
     return publishNotification(notification);
 }
 
