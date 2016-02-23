@@ -61,7 +61,14 @@ function notifyObjects (n) {
                 n.cancel();
             }
 
-            return Promise.resolve(n.response);
+            if (n.status === 1 || n.response != null) {
+                return Promise.resolve(n.response);
+            }
+
+            let err = new Error('Notification was cancelled.');
+            err.code = 'ECANCELED';
+
+            return Promise.reject(err);
         }
     };
 
@@ -72,7 +79,10 @@ function notifyObjects (n) {
         return next();
     }
 
-    return Promise.reject(new Error(n.name + ' was published but has no subscribers.'));
+    let err = new Error(n.name + ' was published but has no subscribers.');
+    err.code = 'ENOSYS';
+
+    return Promise.reject(err);
 }
 
 function publishNotification (notification) {
@@ -87,7 +97,6 @@ function publishNotification (notification) {
 
 function cancelNotification (notification) {
     pending.splice(pending.indexOf(notification), 1);
-    notification = null;
 }
 
 function publish () {
@@ -130,6 +139,7 @@ function unsubscribe (name, fn) {
 
 function __reset () {
     interests = {};
+    pending.forEach(cancelNotification);
     pending = [];
 }
 

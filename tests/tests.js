@@ -123,21 +123,20 @@ describe('pub/sub', () => {
             });
         });
 
-        it('should be able to cancel notifications', done => {
+        it('should be able to cancel notifications', function () {
 
             handoff.subscribe('cancel-test-2', function (n) {
                 n.cancel();
-
-                setTimeout(() => {
-                    done();
-                }, 10);
+                return 'cancelled';
             });
 
             handoff.subscribe('cancel-test-2', function (n) {
-                done(false);
+                return 'not cancelled';
             });
 
-            handoff.publish('cancel-test-2');
+            return handoff.publish('cancel-test-2').then(response => {
+                expect(response).to.equal('cancelled');
+            });
         });
     });
 });
