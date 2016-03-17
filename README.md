@@ -59,11 +59,15 @@ handoff.subscribe('something', (n, message) => {
 
 ````
 
-### handoff.ignoreErrors
+### Rejections
 
-By default, handoff will throw an `Error` if you `publish()` something that nobody is subscribed to.
-This is to help alleviate some of the issues that PubSub and loose coupling introduce. You can disable this behavior by doing `handoff.ignoreErrors = true`
+Handoff will reject a promise in two instances :
 
+- A subscriber cancelled the Notification. In these cases the Error object
+passed to the rejection handler will have a `code` property with a value of `ECANCELED`.
+
+- There are no subscribers for a notification. In these cases the Error object
+passed to the rejection handler will have a `code` property with a value of `ENOSYS`.
 
 #### License
 
