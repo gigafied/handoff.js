@@ -1,142 +1,133 @@
-var handoff = require('../handoff');
+const handoff = require('../handoff')
+const ignore = () => {}
+
+/* global expect, describe, it, afterEach */
 
 describe('pub/sub', () => {
+  afterEach(() => {
+    handoff.__reset()
+  })
 
-    afterEach(() => {
-        handoff.__reset();
-    });
+  it('should publish/subscribe and unsubscribe to a notification successfully', done => {
+    let a = 0
+    let subscriber1
 
-    it('should publish/subscribe and unsubscribe to a notification successfully', done => {
+    subscriber1 = handoff.subscribe('sub-test', () => {
+      a++
+    })
 
-        var a = 0,
-            subscriber1;
+    handoff.publish('sub-test')
+    handoff.unsubscribe('sub-test', subscriber1)
 
-        subscriber1 = handoff.subscribe('sub-test', () => {
-            a ++;
-        });
+    handoff.publish('sub-test').catch(ignore)
 
-        handoff.publish('sub-test');
-        handoff.unsubscribe('sub-test', subscriber1);
+    expect(a).to.equal(1)
+    done()
+  })
 
-        try {
-            handoff.publish('sub-test');
-        } catch (err) {}
+  it('should reject if nobody is listening', done => {
+    handoff.publish('sub-test').catch(err => {
+      ignore(err)
+      done()
+    })
+  })
 
-        expect(a).to.equal(1);
+  it('should hold and resume notifications', function () {
+    let timerRan = false
 
-        done();
-    });
+    handoff.subscribe('sub-test', function () {
+      return 'hello!'
+    })
 
-    it('should reject if nobody is listening', done => {
-        handoff.publish('sub-test').catch(err => {
-            done();
-        });
-    });
+    handoff.hold()
+    setTimeout(function () {
+      timerRan = true
+      handoff.resume()
+    }, 0)
 
-    it('should hold and resume notifications', function () {
-        var timerRan = false;
+    return handoff.publish('sub-test').then(() => {
+      expect(timerRan).to.equal(true)
+    })
+  })
 
-        handoff.subscribe('sub-test', function () {
-            return 'hello!';
-        });
+  it('should publish a notification with data', done => {
+    handoff.subscribe('pub-data-test', function (n, data) {
+      expect(data).to.eql({
+        x: 1,
+        y: 2
+      })
 
-        handoff.hold();
-        setTimeout(function () {
-            timerRan = true;
-            handoff.resume();
-        }, 0);
+      done()
+    })
 
-        return handoff.publish('sub-test').then(() => {
-            expect(timerRan).to.equal(true);
-        });
-    });
+    handoff.publish('pub-data-test', {
+      x: 1,
+      y: 2
+    })
+  })
 
+  it('should publish a notification with multiple arguments', done => {
+    handoff.subscribe('pub-args-test', function (n, arg1, arg2, arg3) {
+      expect(arg1).to.equal(1)
+      expect(arg2).to.equal(2)
+      expect(arg3).to.equal('z')
+      done()
+    })
 
-    it('should publish a notification with data', done => {
+    handoff.publish('pub-args-test', 1, 2, 'z')
+  })
 
-        handoff.subscribe('pub-data-test', function (n, data) {
-            expect(data).to.eql({
-                x : 1,
-                y : 2
-            });
+  describe('notifications', () => {
+    it('should support subscribers that return promises', done => {
+      let didHold = false
 
-            done();
-        });
+      handoff.subscribe('hold-test-2', function (n) {
+        return new Promise(function (resolve, reject) {
+          setTimeout(() => {
+            didHold = true
+            resolve()
+          }, 10)
+        })
+      })
 
-        handoff.publish('pub-data-test', {
-            x : 1,
-            y : 2
-        });
-    });
+      handoff.subscribe('hold-test-2', function (n) {
+        if (didHold) {
+          done()
+        }
+      })
 
-    it('should publish a notification with multiple arguments', done => {
+      handoff.publish('hold-test-2')
+    })
 
-        handoff.subscribe('pub-args-test', function (n, arg1, arg2, arg3) {
-            expect(arg1).to.equal(1);
-            expect(arg2).to.equal(2);
-            expect(arg3).to.equal('z');
-            done();
-        });
+    it('should support subscribers that return values', done => {
+      handoff.subscribe('respond-test-2', function (n) {
+        expect(n).to.be.an('object')
+        return {x: 1, y: 2}
+      })
 
-        handoff.publish('pub-args-test', 1, 2, 'z');
-    });
+      handoff.publish('respond-test-2', {}).then(function (obj) {
+        expect(obj).to.eql({
+          x: 1,
+          y: 2
+        })
 
-    describe('notifications', () => {
+        done()
+      })
+    })
 
-        it('should support subscribers that return promises', done => {
+    it('should be able to cancel notifications', function () {
+      handoff.subscribe('cancel-test-2', function (n) {
+        n.cancel()
+        return 'cancelled'
+      })
 
-            var didHold = false;
+      handoff.subscribe('cancel-test-2', function (n) {
+        return 'not cancelled'
+      })
 
-            handoff.subscribe('hold-test-2', function (n) {
-
-                return new Promise(function (resolve, reject) {
-                    setTimeout(() => {
-                        didHold = true;
-                        resolve();
-                    }, 10);
-                });
-            });
-
-            handoff.subscribe('hold-test-2', function (n) {
-                if (didHold) {
-                    done();
-                }
-            });
-
-            handoff.publish('hold-test-2');
-        });
-
-        it('should support subscribers that return values', done => {
-
-            handoff.subscribe('respond-test-2', function (n) {
-                expect(n).to.be.an('object');
-                return {x : 1, y : 2};
-            });
-
-            handoff.publish('respond-test-2', {}).then(function (obj) {
-                expect(obj).to.eql({
-                    x : 1,
-                    y : 2
-                });
-
-                done();
-            });
-        });
-
-        it('should be able to cancel notifications', function () {
-
-            handoff.subscribe('cancel-test-2', function (n) {
-                n.cancel();
-                return 'cancelled';
-            });
-
-            handoff.subscribe('cancel-test-2', function (n) {
-                return 'not cancelled';
-            });
-
-            return handoff.publish('cancel-test-2').then(response => {
-                expect(response).to.equal('cancelled');
-            });
-        });
-    });
-});
+      return handoff.publish('cancel-test-2').then(response => {
+        expect(response).to.equal('cancelled')
+      })
+    })
+  })
+})

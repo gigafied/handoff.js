@@ -1,159 +1,149 @@
-'use strict';
+'use strict'
 
-
-let handoff,
-    onHold = false,
-    holdQueue = [],
-    interests = {},
-    pending = [];
+let onHold = false
+let holdQueue = []
+let interests = {}
+let pending = []
 
 class Notification {
+  constructor (name, args) {
+    this.name = name
+    this.args = args
+    this.status = 0
+    this.pointer = 0
+    return this
+  }
 
-    constructor (name, args) {
-        this.name = name;
-        this.args = args;
-        this.status = 0;
-        this.pointer = 0;
-        return this;
-    }
-
-    cancel () {
-        this.status = 0;
-        this.pointer = 0;
-        cancelNotification(this);
-    }
+  cancel () {
+    this.status = 0
+    this.pointer = 0
+    cancelNotification(this)
+  }
 }
 
 function notifyObjects (n) {
+  let name, subs
 
-    let name,
-        subs;
-
-    let next = function () {
-
-        if (n.status === 1 && n.pointer < subs.length) {
-
-            return new Promise((resolve, reject) => {
-                try {
-                    resolve(subs[n.pointer++].apply(null, [].concat(n, n.args)));
-                }
-                catch (err) {
-                    reject(err);
-                }
-            }).then(response => {
-                n.response = response;
-                return next();
-            });
+  let next = function () {
+    if (n.status === 1 && n.pointer < subs.length) {
+      return new Promise((resolve, reject) => {
+        try {
+          resolve(subs[n.pointer++].apply(null, [].concat(n, n.args)))
+        } catch (err) {
+          reject(err)
         }
+      }).then(response => {
+        n.response = response
+        return next()
+      })
+    } else {
+      subs = null
 
-        else {
+      if (n.status === 1 || n.response != null) {
+        let response = n.response
+        n.cancel()
+        return Promise.resolve(response)
+      }
 
-            subs = null;
+      let err = new Error('Notification (' + n.name + ') was cancelled.')
+      err.code = 'ECANCELED'
+      n.cancel()
 
-            if (n.status === 1 || n.response != null) {
-                let response = n.response;
-                n.cancel();
-                return Promise.resolve(response);
-            }
-
-            let err = new Error('Notification (' + n.name + ') was cancelled.');
-            err.code = 'ECANCELED';
-            n.cancel();
-
-            return Promise.reject(err);
-        }
-    };
-
-    name = n.name;
-
-    if (interests[name] && interests[name].length) {
-        subs = interests[name].slice(0);
-        return next();
+      return Promise.reject(err)
     }
+  }
 
-    let err = new Error(n.name + ' was published but has no subscribers.');
-    err.code = 'ENOSYS';
+  name = n.name
 
-    return Promise.reject(err);
+  if (interests[name] && interests[name].length) {
+    subs = interests[name].slice(0)
+    return next()
+  }
+
+  let err = new Error(n.name + ' was published but has no subscribers.')
+  err.code = 'ENOSYS'
+
+  return Promise.reject(err)
 }
 
 function publishNotification (notification) {
-    if (onHold) {
-        return new Promise((resolve, reject) => {
-            holdQueue.push({resolve, reject, notification});
-        });
-    }
-    notification.status = 1;
-    notification.pointer = 0;
-    pending.push(notification);
-    return notifyObjects(notification);
+  if (onHold) {
+    return new Promise((resolve, reject) => {
+      holdQueue.push({ resolve, reject, notification })
+    })
+  }
+  notification.status = 1
+  notification.pointer = 0
+  pending.push(notification)
+  return notifyObjects(notification)
 }
 
 function cancelNotification (notification) {
-    let idx = pending.indexOf(notification);
-    if (!~idx) {return;}
-    pending.splice(idx, 1);
+  let idx = pending.indexOf(notification)
+  if (!~idx) {
+    return
+  }
+  pending.splice(idx, 1)
 }
 
 function publish () {
+  let args = Array.prototype.slice.call(arguments)
+  let name = args[0]
 
-    let args = Array.prototype.slice.call(arguments),
-        name = args[0];
+  args = args.slice(1, args.length)
 
-    args = args.slice(1, args.length);
-
-    let notification = new Notification(name, args);
-    return publishNotification(notification);
+  let notification = new Notification(name, args)
+  return publishNotification(notification)
 }
 
 function subscribe (name, fn, priority) {
+  priority = isNaN(priority) ? -1 : priority
+  interests[name] = interests[name] || []
 
-    priority = isNaN(priority) ? -1 : priority;
-    interests[name] = interests[name] || [];
+  if (priority <= -1 || priority >= interests[name].length) {
+    interests[name].push(fn)
+  } else {
+    interests[name].splice(priority, priority, fn)
+  }
 
-    if (priority <= -1 || priority >= interests[name].length) {
-        interests[name].push(fn);
-    }
-
-    else {
-        interests[name].splice(priority, priority, fn);
-    }
-
-    return fn;
+  return fn
 }
 
 function unsubscribe (name, fn) {
+  if (!fn) {
+    interests[name] = []
+    return
+  }
 
-    let fnIndex = interests[name].indexOf(fn);
-
-    if (fnIndex > -1) {
-        interests[name].splice(fnIndex, 1);
-    }
+  let fnIndex = interests[name].indexOf(fn)
+  if (fnIndex > -1) {
+    interests[name].splice(fnIndex, 1)
+  }
 }
 
 function __reset () {
-    interests = {};
-    pending.forEach(cancelNotification);
-    pending = [];
+  interests = {}
+  pending.forEach(cancelNotification)
+  pending = []
 }
 
 function hold () {
-    onHold = true;
+  onHold = true
 }
 
 function resume () {
-    onHold = false;
-    holdQueue.forEach(item => {
-        item.resolve(publishNotification(item.notification));
-    });
-    holdQueue = [];
+  onHold = false
+  holdQueue.forEach(item => {
+    item.resolve(publishNotification(item.notification))
+  })
+  holdQueue = []
 }
 
-module.exports = handoff = {
-    publish,
-    subscribe,
-    unsubscribe,
-    hold,
-    resume,
-    __reset,
-};
+module.exports = {
+  publish,
+  subscribe,
+  unsubscribe,
+  hold,
+  resume,
+  __reset
+}

@@ -1,13 +1,14 @@
-var mocha = require('mocha');
+global.expect = require('chai').expect
 
-global.expect = require('chai').expect;
+const path = require('path')
+const Mocha = require('mocha')
 
-mocha = new mocha({
-    ui : 'bdd',
-    reporter : 'spec'
-});
+const mocha = new Mocha({
+  ui: 'bdd',
+  reporter: 'spec'
+})
 
-mocha.checkLeaks();
+mocha.checkLeaks()
 
-mocha.addFile(__dirname + '/tests.js');
-mocha.run();
+mocha.addFile(path.join(__dirname, 'tests.js'))
+mocha.run()

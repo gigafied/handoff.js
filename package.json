@@ -4,7 +4,7 @@
   "description": "PubSub with Promises",
   "main": "handoff.js",
   "scripts": {
-    "test": "node tests/run.js"
+    "test": "node ./node_modules/standard/bin/cmd | node ./node_modules/snazzy/bin/cmd && node tests/run.js"
   },
   "keywords": [
     "publish",
@@ -27,5 +27,9 @@
   "devDependencies": {
     "chai": "^3.4.1",
     "mocha": "^2.3.4"
+  },
+  "dependencies": {
+    "snazzy": "^7.0.0",
+    "standard": "^10.0.2"
   }
 }
