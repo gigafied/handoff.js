@@ -10,19 +10,24 @@ describe('pub/sub', () => {
 
   it('should publish/subscribe and unsubscribe to a notification successfully', done => {
     let a = 0
-    let subscriber1
 
-    subscriber1 = handoff.subscribe('sub-test', () => {
+    let subscriber1 = handoff.subscribe('sub-test', () => {
       a++
     })
 
-    handoff.publish('sub-test')
-    handoff.unsubscribe('sub-test', subscriber1)
+    let subscriber2 = handoff.subscribe('sub-test', () => {
+      a++
+    })
 
-    handoff.publish('sub-test').catch(ignore)
+    handoff.publish('sub-test').then(() => {
+      handoff.unsubscribe('sub-test', subscriber1)
+      handoff.unsubscribe(subscriber2)
 
-    expect(a).to.equal(1)
-    done()
+      handoff.publish('sub-test').catch(() => {
+        expect(a).to.equal(2)
+        done()
+      })
+    })
   })
 
   it('should reject if nobody is listening', done => {

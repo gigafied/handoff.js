@@ -111,6 +111,12 @@ function subscribe (name, fn, priority) {
 
 function unsubscribe (name, fn) {
   if (!fn) {
+    if (typeof name === 'function') {
+      fn = name
+      name = null
+      Object.keys(interests).forEach(p => unsubscribe(p, fn))
+      return
+    }
     interests[name] = []
     return
   }
