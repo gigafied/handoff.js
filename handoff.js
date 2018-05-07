@@ -35,6 +35,9 @@ function notifyObjects (n) {
       }).then(response => {
         n.response = response
         return next()
+      }).catch(err => {
+        n.cancel()
+        throw err
       })
     } else {
       subs = null
@@ -62,6 +65,8 @@ function notifyObjects (n) {
 
   let err = new Error(n.name + ' was published but has no subscribers.')
   err.code = 'ENOSYS'
+
+  n.cancel()
 
   return Promise.reject(err)
 }
