@@ -26,9 +26,7 @@
   },
   "devDependencies": {
     "chai": "^3.4.1",
-    "mocha": "^2.3.4"
-  },
-  "dependencies": {
+    "mocha": "^2.3.4",
     "snazzy": "^7.0.0",
     "standard": "^10.0.2"
   }
